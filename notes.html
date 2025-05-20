@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NoteVault - My Notes</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="notes-container">
+    <h2>Welcome to NoteVault</h2>
+
+    <form id="noteForm">
+      <textarea id="noteInput" placeholder="Write your note here..." required></textarea>
+      <button type="submit">Add Note</button>
+    </form>
+
+    <div id="notesList">
+      <!-- Notes will appear here -->
+    </div>
+  </div>
+
+<script>
+  const form = document.getElementById('noteForm');
+  const input = document.getElementById('noteInput');
+  const list = document.getElementById('notesList');
+
+  async function loadNotes() {
+    const res = await fetch('/api/notes');
+    const data = await res.json();
+    list.innerHTML = '';
+    data.forEach(note => {
+      const div = document.createElement('div');
+      div.className = 'note';
+      div.innerHTML = `<p>${note.content}</p><button onclick="deleteNote(${note.id})">Delete</button>`;
+      list.appendChild(div);
+    });
+  }
+
+async function deleteNote(id) {
+  await fetch(`/api/notes/${id}`, {
+    method: 'DELETE'
+  });
+  loadNotes(); // refresh the list
+}
+
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const content = input.value.trim();
+    if (content === '') return;
+
+    await fetch('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `content=${encodeURIComponent(content)}`
+    });
+
+    input.value = '';
+    loadNotes();
+  });
+
+  loadNotes();
+</script>
+</body>
+</html>

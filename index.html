@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NoteVault Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+  <div class="login-container">
+    <i class="fas fa-lock fa-2x" style="color:#5c6bc0;"></i>
+    <h2>Login to NoteVault</h2>
+
+    <form action="/login" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const html = await response.text();
+      document.body.innerHTML = html;
+
+      if (html.includes("Welcome")) {
+        loadNotesUI();
+      }
+    });
+
+    function loadNotesUI() {
+      const notesHTML = `
+        <div class="notes-container">
+          <h2>Your Notes</h2>
+          <textarea id="noteContent" placeholder="Write a note..."></textarea>
+          <button onclick="addNote()">Add Note</button>
+          <div id="notesList"></div>
+        </div>
+      `;
+      document.body.innerHTML = notesHTML;
+      loadNotes();
+
+    }
+
+    async function loadNotes() {
+      const res = await fetch("/api/notes");
+      const notes = await res.json();
+      const notesList = document.getElementById("notesList");
+      notesList.innerHTML = "";
+
+      notes.forEach((note) => {
+        const div = document.createElement("div");
+        div.className = "note";
+        div.innerHTML = `
+          ${note.content}
+          <button onclick="deleteNote(${note.id})">Delete</button>
+        `;
+        notesList.appendChild(div);
+      });
+    }
+
+    async function addNote() {
+      const content = document.getElementById("noteContent").value;
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+
+      if (res.ok) {
+
+        loadNotes();
+      } else {
+        alert("Note cannot be empty.");
+      }
+    }
+
+    async function deleteNote(id) {
+      const res = await fetch(`/api/notes/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        loadNotes();
+      }
+
+    }
+  </script>
+</body>
+</html>
